@@ -29,3 +29,6 @@ In order for a zone to be recognized as teardrop by the script, the zone must me
 
 ## Note 2:
 It is still possible to use the old form of this script (non action plugin). The td.py script remains fully functional for independent use.
+
+## Note 3:
+This version should work with KiCAD 6 nightly. If not, please contact me, i'll try to fix it further. :)
