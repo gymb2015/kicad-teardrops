@@ -5,15 +5,22 @@
 #
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
 # Cubic Bezier upgrade by mitxela, 2021 mitxela.com
+# Fixed for KiCAD 6 nightly by gymb2015 (MISC)
 
 import os
 import sys
 from math import cos, acos, sin, asin, tan, atan2, sqrt, pi
-from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
-from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
+# from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
+from pcbnew import PCB_VIA as VIA, ToMM, PCB_TRACK as TRACK, FromMM, wxPoint, GetBoard, ZONE as ZONE_CONTAINER
+
+# from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
+from pcbnew import PAD_ATTRIB_PTH as PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
+
 from pcbnew import STARTPOINT, ENDPOINT
 
-__version__ = "0.4.11"
+from pcbnew import Refresh
+
+__version__ = "0.4.11_fix"
 
 ToUnits = ToMM
 FromUnits = FromMM
@@ -37,12 +44,38 @@ def __GetAllVias(board):
     return vias, vias_selected
 
 
+# def __GetAllPads(board, filters=[]):
+    # """Just retreive all pads from the given board"""
+    # pads = []
+    # pads_selected = []
+    # for i in range(board.GetPadCount()):
+        # pad = board.GetPad(i)
+        # if pad.GetAttribute() in filters:
+            # pos = pad.GetPosition()
+            # drill = min(pad.GetSize())
+            # """See where the pad is"""
+            # if pad.GetAttribute() == PAD_ATTRIB_SMD:
+                # # Cannot use GetLayer here because it returns the non-flipped
+                # # layer. Need to get the real layer from the layer set
+                # cu_stack = pad.GetLayerSet().CuStack()
+                # if len(cu_stack) == 0:
+                    # # The pad is not on a Copper layer
+                    # continue
+                # layer = cu_stack[0]
+            # else:
+                # layer = -1
+            # pads.append((pos, drill, 0, layer))
+            # if pad.IsSelected():
+                # pads_selected.append((pos, drill, 0, layer))
+    # return pads, pads_selected
+    
 def __GetAllPads(board, filters=[]):
     """Just retreive all pads from the given board"""
     pads = []
+    all_pads = board.GetPads()
     pads_selected = []
-    for i in range(board.GetPadCount()):
-        pad = board.GetPad(i)
+    for i in range(len(all_pads)):
+        pad = all_pads[i]
         if pad.GetAttribute() in filters:
             pos = pad.GetPosition()
             drill = min(pad.GetSize())
@@ -90,10 +123,13 @@ def __Zone(board, points, track):
     """Add a zone to the board"""
     z = ZONE_CONTAINER(board)
 
+    dummy = None # retrieve variable for GetLocalClearance(dummy) - like a null pointer
+
     # Add zone properties
     z.SetLayer(track.GetLayer())
     z.SetNetCode(track.GetNetCode())
-    z.SetZoneClearance(track.GetClearance())
+    # z.SetZoneClearance(track.GetClearance())
+    z.SetLocalClearance(track.GetLocalClearance(dummy))
     z.SetMinThickness(25400)  # The minimum
     z.SetPadConnection(2)  # 2 -> solid
     z.SetIsFilled(True)
@@ -104,7 +140,6 @@ def __Zone(board, points, track):
     for p in points:
         ol.Append(p.x, p.y)
 
-    sys.stdout.write("+")
     return z
 
 
@@ -382,6 +417,7 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
 
     RebuildAllZones(pcb)
     print('{0} teardrops inserted'.format(count))
+    Refresh() # we dont have to reload pcbnew to show them teardrops :)
     return count
 
 
@@ -400,4 +436,5 @@ def RmTeardrops(pcb=None):
 
     RebuildAllZones(pcb)
     print('{0} teardrops removed'.format(count))
+    Refresh()
     return count

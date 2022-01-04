@@ -6,6 +6,7 @@
 #
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
 # Cubic Bezier upgrade by mitxela, 2021 mitxela.com
+# Fixed fpr KiCAD 6 nightly by Gymb2015 (MISC)
 
 import wx
 import pcbnew
@@ -22,7 +23,7 @@ class TeardropDialog(teardrop_gui):
         """Init the brand new instance"""
         super(TeardropDialog, self).__init__(None)
         self.board = board
-        self.SetTitle("Teardrops (v{0})".format(__version__))
+        self.SetTitle("Teardrops fixed for KiCAD 6 nightly (v{0})".format(__version__))
         self.rbx_action.Bind(wx.EVT_RADIOBOX, self.onAction)
         self.Bind(wx.EVT_CLOSE, self.onCloseWindow)
         self.but_cancel.Bind(wx.EVT_BUTTON, self.onCloseWindow)
@@ -69,4 +70,4 @@ def InitTeardropDialog(board):
     """Launch the dialog"""
     tg = TeardropDialog(board)
     tg.ShowModal()
-    return tg
+    tg.Destroy()
